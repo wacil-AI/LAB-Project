@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"import scipy; import numpy; import torch; import cvxpy; print\\(''scipy'', scipy.__version__\\); print\\(''numpy'', numpy.__version__\\); print\\(''torch'', torch.__version__\\); print\\(''cvxpy'', cvxpy.__version__\\)\")",
+      "Bash(.venv/Scripts/pip.exe install:*)"
+    ]
+  }
+}
