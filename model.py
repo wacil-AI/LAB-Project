@@ -1,13 +1,39 @@
 from __future__ import annotations
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import tensorflow as tf
 
 
-class GarchParamNet(nn.Module):
+class GroupNorm(tf.keras.layers.Layer):
+    """Group Normalization for channels-last tensors [B, L, C]."""
+
+    def __init__(self, num_groups: int, eps: float = 1e-5, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.num_groups = num_groups
+        self.eps = eps
+
+    def build(self, input_shape):
+        C = input_shape[-1]
+        self.gamma = self.add_weight(shape=(C,), initializer="ones", name="gamma")
+        self.beta = self.add_weight(shape=(C,), initializer="zeros", name="beta")
+
+    def call(self, x):
+        # x: [B, L, C]
+        shape = tf.shape(x)
+        B, L = shape[0], shape[1]
+        C = x.shape[-1]
+        G = self.num_groups
+
+        x_r = tf.reshape(x, [B, L, G, C // G])
+        mean, var = tf.nn.moments(x_r, axes=[1, 3], keepdims=True)
+        x_norm = (x_r - mean) / tf.sqrt(var + self.eps)
+        x_norm = tf.reshape(x_norm, [B, L, C])
+        return x_norm * self.gamma + self.beta
+
+
+class GarchParamNet(tf.keras.Model):
     """Predicts omega, alpha and beta from a return window."""
     DROP = 0.0
+
     def __init__(
         self,
         hidden: int = 32,
@@ -26,86 +52,78 @@ class GarchParamNet(nn.Module):
 
         self.max_persistence = float(max_persistence)
 
-        layers = []
-        in_ch = 1
+        # Build list first, then assign so Keras tracks all layers via __setattr__
+        conv_blocks = []
         for i in range(conv_layers):
             dilation = 2 ** i
-            padding = dilation * (kernel - 1) // 2
-            layers.extend(
-                [
-                    nn.Conv1d(
-                        in_channels=in_ch,
-                        out_channels=hidden,
-                        kernel_size=kernel,
-                        dilation=dilation,
-                        padding=padding,
-                    ),
-                    nn.GroupNorm(num_groups=num_groups, num_channels=hidden),
-                    nn.LeakyReLU(0.2),
-                ]
+            conv_blocks.append(
+                tf.keras.layers.Conv1D(
+                    filters=hidden,
+                    kernel_size=kernel,
+                    dilation_rate=dilation,
+                    padding="same",
+                )
             )
-            in_ch = hidden
+            conv_blocks.append(GroupNorm(num_groups=num_groups))
+            conv_blocks.append(tf.keras.layers.LeakyReLU(alpha=0.2))
+        self._conv_blocks = conv_blocks
 
-        self.conv = nn.Sequential(*layers)
+        self.fc_dense1 = tf.keras.layers.Dense(hidden)
+        self.fc_act1 = tf.keras.layers.LeakyReLU(alpha=0.1)
+        self.fc_dense2 = tf.keras.layers.Dense(hidden // 2)
+        self.fc_act2 = tf.keras.layers.LeakyReLU(alpha=0.1)
+        self.fc_drop = tf.keras.layers.Dropout(dropout)
 
-        self.fc = nn.Sequential(
-            nn.Linear(hidden, hidden),
-            nn.LeakyReLU(0.1),
-            nn.Linear(hidden, hidden // 2),
-            nn.LeakyReLU(0.1),
-            nn.Dropout(dropout),
-        )
+        self.head_omega = tf.keras.layers.Dense(1)
+        self.head_c = tf.keras.layers.Dense(1)
+        self.head_rho = tf.keras.layers.Dense(1)
 
-        self.head_omega = nn.Linear(hidden // 2, 1)
-        self.head_c = nn.Linear(hidden // 2, 1)
-        self.head_rho = nn.Linear(hidden // 2, 1)
-
-    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def call(self, x, training=False):
         """
         Args:
             x: tensor of shape [batch, window, 1]
         Returns:
             omega, alpha, beta: tensors of shape [batch]
         """
-        if x.ndim != 3 or x.size(-1) != 1:
-            raise ValueError(f"expected input [B, W, 1], got {tuple(x.shape)}")
+        h = x  # [B, W, 1] — channels-last, no transpose needed
+        for layer in self._conv_blocks:
+            if isinstance(layer, tf.keras.layers.Dropout):
+                h = layer(h, training=training)
+            else:
+                h = layer(h)
 
-        x = x.transpose(1, 2)  # [B, 1, W]
-        h = self.conv(x).mean(dim=2)  # global average pooling
-        h = self.fc(h)
+        h = tf.reduce_mean(h, axis=1)  # global average pooling → [B, hidden]
 
-        omega = F.softplus(self.head_omega(h)) + 1e-6
-        c = torch.sigmoid(self.head_c(h)) * self.max_persistence
-        rho = torch.sigmoid(self.head_rho(h))
+        h = self.fc_dense1(h)
+        h = self.fc_act1(h)
+        h = self.fc_dense2(h)
+        h = self.fc_act2(h)
+        h = self.fc_drop(h, training=training)
+
+        omega = tf.nn.softplus(self.head_omega(h)) + 1e-6
+        c = tf.sigmoid(self.head_c(h)) * self.max_persistence
+        rho = tf.sigmoid(self.head_rho(h))
 
         alpha = c * rho
         beta = c * (1.0 - rho)
-        return omega.squeeze(-1), alpha.squeeze(-1), beta.squeeze(-1)
+        return tf.squeeze(omega, axis=-1), tf.squeeze(alpha, axis=-1), tf.squeeze(beta, axis=-1)
 
 
-class GarchVolLayer(nn.Module):
+class GarchVolLayer(tf.keras.layers.Layer):
     """Differentiable GARCH(1,1) recursion over a return window."""
 
-    def forward(
-        self,
-        r_window: torch.Tensor,
-        omega: torch.Tensor,
-        alpha: torch.Tensor,
-        beta: torch.Tensor,
-    ) -> torch.Tensor:
-        if r_window.ndim != 3 or r_window.size(-1) != 1:
-            raise ValueError(f"expected r_window [B, W, 1], got {tuple(r_window.shape)}")
-
-        r = r_window.squeeze(-1)  # [B, W]
+    def call(self, r_window, omega, alpha, beta):
+        r = tf.squeeze(r_window, axis=-1)  # [B, W]
         sigma2 = omega / (1.0 - alpha - beta + 1e-8)
 
-        for t in range(r.size(1)):
+        W = r.shape[1]  # static window size
+        for t in range(W):
             sigma2 = omega + alpha * (r[:, t] ** 2) + beta * sigma2
 
-        return torch.clamp(sigma2, min=1e-10)
+        return tf.maximum(sigma2, 1e-10)
 
 
-class HybridGarch(nn.Module):
+class HybridGarch(tf.keras.Model):
     """Hybrid architecture: NN parameter head + GARCH volatility layer."""
 
     def __init__(
@@ -126,8 +144,8 @@ class HybridGarch(nn.Module):
         )
         self.vol = GarchVolLayer()
 
-    def forward(self, r_window: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        omega, alpha, beta = self.net(r_window)
+    def call(self, r_window, training=False):
+        omega, alpha, beta = self.net(r_window, training=training)
         sigma2 = self.vol(r_window, omega, alpha, beta)
         return sigma2, omega, alpha, beta
 

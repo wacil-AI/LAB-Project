@@ -2,36 +2,30 @@ from __future__ import annotations
 
 import numpy as np
 import matplotlib.pyplot as plt
-import torch
+import tensorflow as tf
 
 
-@torch.no_grad()
 def plot_predictions_analysis(
-    model: torch.nn.Module,
-    loader: torch.utils.data.DataLoader,
-    device: torch.device,
+    model: tf.keras.Model,
+    dataset: tf.data.Dataset,
     n_examples: int = 500,
     true_alpha_mean: float | None = None,
     true_beta_mean: float | None = None,
     save_path: str | None = None,
 ) -> dict[str, float]:
     """Diagnostic plots for predicted variance and parameters."""
-    model.eval()
-
     true_vals = []
     pred_vals = []
     alphas = []
     betas = []
 
-    for x, y in loader:
-        x = x.to(device)
-        y = y.to(device)
-        pred_sigma2, _, alpha, beta = model(x)
+    for x, y in dataset:
+        pred_sigma2, _, alpha, beta = model(x, training=False)
 
-        true_vals.extend(y.detach().cpu().numpy().tolist())
-        pred_vals.extend(pred_sigma2.detach().cpu().numpy().tolist())
-        alphas.extend(alpha.detach().cpu().numpy().tolist())
-        betas.extend(beta.detach().cpu().numpy().tolist())
+        true_vals.extend(y.numpy().tolist())
+        pred_vals.extend(pred_sigma2.numpy().tolist())
+        alphas.extend(alpha.numpy().tolist())
+        betas.extend(beta.numpy().tolist())
 
         if len(true_vals) >= n_examples:
             break
@@ -106,29 +100,28 @@ def plot_predictions_analysis(
     return stats
 
 
-@torch.no_grad()
 def rolling_params(
-    model: torch.nn.Module,
+    model: tf.keras.Model,
     r_series: np.ndarray,
     window_size: int,
-    device: torch.device,
     batch_size: int = 1024,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """Predict omega, alpha, beta over rolling windows for one series."""
-    model.eval()
-    r = torch.tensor(r_series, dtype=torch.float32)
-    x = r.unfold(0, window_size, 1)[:-1].unsqueeze(-1)
+    r_np = np.asarray(r_series, dtype=np.float32)
+    # sliding windows: [N, window_size]
+    windows = np.lib.stride_tricks.sliding_window_view(r_np, window_size)[:-1]
+    x = tf.constant(windows[:, :, np.newaxis], dtype=tf.float32)  # [N, W, 1]
 
     omegas = []
     alphas = []
     betas = []
 
-    for start in range(0, x.size(0), batch_size):
-        xb = x[start : start + batch_size].to(device)
-        omega, alpha, beta = model.net(xb)
-        omegas.append(omega.detach().cpu().numpy())
-        alphas.append(alpha.detach().cpu().numpy())
-        betas.append(beta.detach().cpu().numpy())
+    for start in range(0, x.shape[0], batch_size):
+        xb = x[start : start + batch_size]
+        omega, alpha, beta = model.net(xb, training=False)
+        omegas.append(omega.numpy())
+        alphas.append(alpha.numpy())
+        betas.append(beta.numpy())
 
     omega = np.concatenate(omegas)
     alpha = np.concatenate(alphas)
@@ -138,14 +131,13 @@ def rolling_params(
 
 
 def plot_persistence_over_time(
-    model: torch.nn.Module,
+    model: tf.keras.Model,
     r_series: np.ndarray,
     window_size: int,
-    device: torch.device,
     c_max: float = 0.99,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Plot persistence C=alpha+beta over time for one series."""
-    _, _, _, c = rolling_params(model, r_series, window_size, device)
+    _, _, _, c = rolling_params(model, r_series, window_size)
     t = np.arange(window_size, window_size + len(c))
 
     plt.figure(figsize=(12, 4))
@@ -163,33 +155,28 @@ def plot_persistence_over_time(
 
 
 def collect_true_pred_sigma2(
-    model: torch.nn.Module,
-    loader: torch.utils.data.DataLoader,
-    device: torch.device,
+    model: tf.keras.Model,
+    dataset: tf.data.Dataset,
     max_batches: int | None = None,
     eps: float = 1e-12,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Collect variance targets and predictions from a loader."""
-    model.eval()
+    """Collect variance targets and predictions from a dataset."""
     y_true_list = []
     y_pred_list = []
 
-    with torch.no_grad():
-        for b, batch in enumerate(loader):
-            if max_batches is not None and b >= max_batches:
-                break
+    for b, batch in enumerate(dataset):
+        if max_batches is not None and b >= max_batches:
+            break
 
-            xb = batch[0].to(device)
-            yb = batch[1].to(device)
+        xb, yb = batch[0], batch[1]
+        out = model(xb, training=False)
+        pred = out[0] if isinstance(out, (tuple, list)) else out
 
-            out = model(xb)
-            pred = out[0] if isinstance(out, (tuple, list)) else out
+        pred = tf.maximum(pred, eps)
+        yb = tf.maximum(tf.cast(yb, tf.float32), eps)
 
-            pred = torch.clamp(pred, min=eps)
-            yb = torch.clamp(yb, min=eps)
-
-            y_true_list.append(yb.detach().cpu().numpy().reshape(-1))
-            y_pred_list.append(pred.detach().cpu().numpy().reshape(-1))
+        y_true_list.append(yb.numpy().reshape(-1))
+        y_pred_list.append(pred.numpy().reshape(-1))
 
     return np.concatenate(y_true_list), np.concatenate(y_pred_list)
 

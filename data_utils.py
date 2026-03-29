@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
-import torch
-from torch.utils.data import Dataset
+import tensorflow as tf
 
 
 class GARCHGenerator:
@@ -18,24 +17,24 @@ class GARCHGenerator:
         self.n_samples = int(n_samples)
         self.seed = int(seed)
 
-    def generate_series(self, burn_in: int = 200) -> tuple[torch.Tensor, torch.Tensor]:
-        g = torch.Generator().manual_seed(self.seed)
+    def generate_series(self, burn_in: int = 200) -> tuple[tf.Tensor, tf.Tensor]:
+        rng = np.random.default_rng(self.seed)
         sigma2 = self.omega / (1.0 - self.alpha - self.beta)
 
         returns = []
         variances = []
 
         for _ in range(self.n_samples + int(burn_in)):
-            eps = torch.randn((), generator=g).item()
+            eps = rng.standard_normal()
             r_t = float(np.sqrt(sigma2) * eps)
 
             returns.append(r_t)
             variances.append(float(sigma2))
 
-            sigma2 = self.omega + self.alpha * (r_t**2) + self.beta * sigma2
+            sigma2 = self.omega + self.alpha * (r_t ** 2) + self.beta * sigma2
 
-        returns_t = torch.tensor(returns[burn_in:], dtype=torch.float32)
-        variances_t = torch.tensor(variances[burn_in:], dtype=torch.float32)
+        returns_t = tf.constant(returns[burn_in:], dtype=tf.float32)
+        variances_t = tf.constant(variances[burn_in:], dtype=tf.float32)
 
         if len(returns_t) != self.n_samples or len(variances_t) != self.n_samples:
             raise RuntimeError("unexpected synthetic series length")
@@ -66,10 +65,10 @@ def compute_garch_variance_from_params(
     return sigma2
 
 
-class MultiGARCHDataset(Dataset):
+class MultiGARCHDataset:
     """Sliding-window dataset built from multiple return series."""
 
-    def __init__(self, returns_mat: torch.Tensor, variances_mat: torch.Tensor, window_size: int, stride: int = 10) -> None:
+    def __init__(self, returns_mat: tf.Tensor, variances_mat: tf.Tensor, window_size: int, stride: int = 10) -> None:
         if returns_mat.shape != variances_mat.shape:
             raise ValueError("returns_mat and variances_mat must have same shape")
 
@@ -88,17 +87,32 @@ class MultiGARCHDataset(Dataset):
         self.windows_per_series = self.max_start // self.stride + 1
         self.n_samples = self.n_series * self.windows_per_series
 
-    def __len__(self) -> int:
-        return self.n_samples
+    def to_tf_dataset(
+        self,
+        batch_size: int = 256,
+        shuffle: bool = True,
+        shuffle_buffer: int = 10_000,
+    ) -> tf.data.Dataset:
+        """Build a batched tf.data.Dataset from all sliding windows."""
+        returns_np = self.returns.numpy()
+        variances_np = self.variances.numpy()
 
-    def __getitem__(self, idx: int) -> tuple[torch.Tensor, torch.Tensor]:
-        series_idx = idx // self.windows_per_series
-        k = idx % self.windows_per_series
+        all_x = np.empty((self.n_samples, self.window_size, 1), dtype=np.float32)
+        all_y = np.empty((self.n_samples,), dtype=np.float32)
 
-        t = k * self.stride
-        x = self.returns[series_idx, t : t + self.window_size].unsqueeze(-1)  # [W, 1]
-        y = self.variances[series_idx, t + self.window_size]  # scalar
-        return x, y
+        idx = 0
+        for s in range(self.n_series):
+            for k in range(self.windows_per_series):
+                t = k * self.stride
+                all_x[idx, :, 0] = returns_np[s, t : t + self.window_size]
+                all_y[idx] = variances_np[s, t + self.window_size]
+                idx += 1
+
+        ds = tf.data.Dataset.from_tensor_slices((all_x, all_y))
+        if shuffle:
+            ds = ds.shuffle(shuffle_buffer)
+        ds = ds.batch(batch_size).prefetch(tf.data.AUTOTUNE)
+        return ds
 
 
 def sample_params_by_C(
@@ -129,7 +143,7 @@ def make_synth_dataset(
     n_samples: int = 2000,
     burn_in: int = 200,
     seed0: int = 1000,
-) -> tuple[torch.Tensor, torch.Tensor]:
+) -> tuple[tf.Tensor, tf.Tensor]:
     returns_list = []
     vars_list = []
 
@@ -139,8 +153,8 @@ def make_synth_dataset(
         returns_list.append(r)
         vars_list.append(s2)
 
-    returns_mat = torch.stack(returns_list, dim=0)
-    vars_mat = torch.stack(vars_list, dim=0)
+    returns_mat = tf.stack(returns_list, axis=0)
+    vars_mat = tf.stack(vars_list, axis=0)
     return returns_mat, vars_mat
 
 
@@ -165,11 +179,11 @@ def split_series_indices(
     return tr_ids, va_ids, te_ids
 
 
-def standardize_returns(returns: torch.Tensor, mean_r: torch.Tensor, std_r: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+def standardize_returns(returns: tf.Tensor, mean_r: tf.Tensor, std_r: tf.Tensor, eps: float = 1e-8) -> tf.Tensor:
     return (returns - mean_r) / (std_r + eps)
 
 
-def scale_variances(variances: torch.Tensor, std_r: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+def scale_variances(variances: tf.Tensor, std_r: tf.Tensor, eps: float = 1e-8) -> tf.Tensor:
     return variances / ((std_r + eps) ** 2)
 
 

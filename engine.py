@@ -4,20 +4,43 @@ import os
 from typing import Any
 
 import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
+import tensorflow as tf
+
+
+class _ReduceLROnPlateau:
+    """Minimal ReduceLROnPlateau scheduler for a TF optimizer."""
+
+    def __init__(self, optimizer, mode: str = "min", factor: float = 0.5, patience: int = 2) -> None:
+        self.optimizer = optimizer
+        self.factor = factor
+        self.patience = patience
+        self._wait = 0
+        self._best = float("inf") if mode == "min" else float("-inf")
+        self._mode = mode
+
+    def step(self, metric: float) -> None:
+        improved = (self._mode == "min" and metric < self._best) or (
+            self._mode == "max" and metric > self._best
+        )
+        if improved:
+            self._best = metric
+            self._wait = 0
+        else:
+            self._wait += 1
+            if self._wait >= self.patience:
+                old_lr = float(self.optimizer.learning_rate)
+                self.optimizer.learning_rate.assign(old_lr * self.factor)
+                self._wait = 0
 
 
 def train_epoch(
-    model: torch.nn.Module,
-    loader: torch.utils.data.DataLoader,
-    optimizer: torch.optim.Optimizer,
-    device: torch.device,
+    model: tf.keras.Model,
+    dataset: tf.data.Dataset,
+    optimizer: tf.keras.optimizers.Optimizer,
     eps: float = 1e-8,
+    weight_decay: float = 0.0,
 ) -> tuple[float, float, float, float]:
-    model.train()
-    criterion = nn.MSELoss()
+    mse_fn = tf.keras.losses.MeanSquaredError()
 
     total_loss = 0.0
     total_w = 0.0
@@ -25,37 +48,37 @@ def train_epoch(
     total_b = 0.0
     n = 0
 
-    for x, y in loader:
-        x = x.to(device)
-        y = y.to(device).float()
+    for x, y in dataset:
+        y = tf.cast(y, tf.float32)
 
-        pred_sigma2, omega, alpha, beta = model(x)
-        loss = criterion(torch.log(pred_sigma2 + eps), torch.log(y + eps))
+        with tf.GradientTape() as tape:
+            pred_sigma2, omega, alpha, beta = model(x, training=True)
+            loss = mse_fn(tf.math.log(y + eps), tf.math.log(pred_sigma2 + eps))
 
-        optimizer.zero_grad()
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        optimizer.step()
+        grads = tape.gradient(loss, model.trainable_variables)
+        # Apply L2 weight decay manually (equivalent to PyTorch AdamW weight_decay)
+        if weight_decay > 0:
+            grads = [g + weight_decay * v if g is not None else g
+                     for g, v in zip(grads, model.trainable_variables)]
+        grads, _ = tf.clip_by_global_norm(grads, 1.0)
+        optimizer.apply_gradients(zip(grads, model.trainable_variables))
 
-        bs = x.size(0)
-        total_loss += loss.item() * bs
-        total_w += omega.detach().mean().item() * bs
-        total_a += alpha.detach().mean().item() * bs
-        total_b += beta.detach().mean().item() * bs
+        bs = tf.shape(x)[0].numpy()
+        total_loss += float(loss) * bs
+        total_w += float(tf.reduce_mean(omega)) * bs
+        total_a += float(tf.reduce_mean(alpha)) * bs
+        total_b += float(tf.reduce_mean(beta)) * bs
         n += bs
 
     return total_loss / n, total_w / n, total_a / n, total_b / n
 
 
-@torch.no_grad()
 def validate_epoch(
-    model: torch.nn.Module,
-    loader: torch.utils.data.DataLoader,
-    device: torch.device,
+    model: tf.keras.Model,
+    dataset: tf.data.Dataset,
     eps: float = 1e-8,
 ) -> tuple[float, float, float, float]:
-    model.eval()
-    criterion = nn.MSELoss()
+    mse_fn = tf.keras.losses.MeanSquaredError()
 
     total_loss = 0.0
     total_w = 0.0
@@ -63,42 +86,38 @@ def validate_epoch(
     total_b = 0.0
     n = 0
 
-    for x, y in loader:
-        x = x.to(device)
-        y = y.to(device).float()
+    for x, y in dataset:
+        y = tf.cast(y, tf.float32)
 
-        pred_sigma2, omega, alpha, beta = model(x)
-        loss = criterion(torch.log(pred_sigma2 + eps), torch.log(y + eps))
+        pred_sigma2, omega, alpha, beta = model(x, training=False)
+        loss = mse_fn(tf.math.log(y + eps), tf.math.log(pred_sigma2 + eps))
 
-        bs = x.size(0)
-        total_loss += loss.item() * bs
-        total_w += omega.detach().mean().item() * bs
-        total_a += alpha.detach().mean().item() * bs
-        total_b += beta.detach().mean().item() * bs
+        bs = tf.shape(x)[0].numpy()
+        total_loss += float(loss) * bs
+        total_w += float(tf.reduce_mean(omega)) * bs
+        total_a += float(tf.reduce_mean(alpha)) * bs
+        total_b += float(tf.reduce_mean(beta)) * bs
         n += bs
 
     return total_loss / n, total_w / n, total_a / n, total_b / n
 
 
 def train_hybrid_garch(
-    model: torch.nn.Module,
-    train_loader: torch.utils.data.DataLoader,
-    val_loader: torch.utils.data.DataLoader,
+    model: tf.keras.Model,
+    train_loader: tf.data.Dataset,
+    val_loader: tf.data.Dataset,
     n_epochs: int,
     lr: float,
-    device: torch.device,
-    ckpt_path: str | None = "hybrid_garch_pretrained_synth.pt",
+    ckpt_path: str | None = "hybrid_garch_pretrained_synth.weights.h5",
     weight_decay: float = 1e-4,
     scheduler_patience: int = 2,
     print_every: int = 2,
 ) -> dict[str, list[float]]:
-    optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay=weight_decay)
-    scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer, mode="min", factor=0.5, patience=scheduler_patience
-    )
+    optimizer = tf.keras.optimizers.Adam(learning_rate=lr)
+    scheduler = _ReduceLROnPlateau(optimizer, mode="min", factor=0.5, patience=scheduler_patience)
 
     best_val = float("inf")
-    best_state: dict[str, Any] | None = None
+    best_weights: list[Any] | None = None
 
     history: dict[str, list[float]] = {
         "train_loss": [],
@@ -112,8 +131,8 @@ def train_hybrid_garch(
     }
 
     for ep in range(1, n_epochs + 1):
-        tr_loss, tr_w, tr_a, tr_b = train_epoch(model, train_loader, optimizer, device)
-        va_loss, va_w, va_a, va_b = validate_epoch(model, val_loader, device)
+        tr_loss, tr_w, tr_a, tr_b = train_epoch(model, train_loader, optimizer, weight_decay=weight_decay)
+        va_loss, va_w, va_a, va_b = validate_epoch(model, val_loader)
         scheduler.step(va_loss)
 
         history["train_loss"].append(tr_loss)
@@ -127,9 +146,9 @@ def train_hybrid_garch(
 
         if va_loss < best_val:
             best_val = va_loss
-            best_state = {k: v.detach().cpu().clone() for k, v in model.state_dict().items()}
+            best_weights = [w.numpy().copy() for w in model.weights]
             if ckpt_path is not None:
-                torch.save(model.state_dict(), ckpt_path)
+                model.save_weights(ckpt_path)
 
         if ep == 1 or ep % print_every == 0:
             print(
@@ -140,46 +159,44 @@ def train_hybrid_garch(
     print(f"Best val loss = {best_val:.6f} (log-variance MSE)")
 
     if ckpt_path is not None and os.path.exists(ckpt_path):
-        model.load_state_dict(torch.load(ckpt_path, map_location=device))
-    elif best_state is not None:
-        model.load_state_dict(best_state)
+        model.load_weights(ckpt_path)
+    elif best_weights is not None:
+        model.set_weights(best_weights)
 
     return history
 
 
-@torch.no_grad()
 def eval_log_mse(
-    model: torch.nn.Module,
-    loader: torch.utils.data.DataLoader,
-    device: torch.device,
+    model: tf.keras.Model,
+    dataset: tf.data.Dataset,
     eps: float = 1e-8,
 ) -> float:
-    model.eval()
     total = 0.0
     n = 0
 
-    for x, y in loader:
-        x = x.to(device)
-        y = y.to(device).float()
+    for x, y in dataset:
+        y = tf.cast(y, tf.float32)
+        sigma2_hat, _, _, _ = model(x, training=False)
+        loss = tf.reduce_mean((tf.math.log(sigma2_hat + eps) - tf.math.log(y + eps)) ** 2)
 
-        sigma2_hat, _, _, _ = model(x)
-        loss = ((torch.log(sigma2_hat + eps) - torch.log(y + eps)) ** 2).mean()
-
-        bs = x.size(0)
-        total += loss.item() * bs
+        bs = tf.shape(x)[0].numpy()
+        total += float(loss) * bs
         n += bs
 
     return total / max(1, n)
 
 
 def arch_baseline_log_mse_per_series(
-    returns_mat: torch.Tensor,
-    vars_mat: torch.Tensor,
+    returns_mat,
+    vars_mat,
     window_size: int,
     fit_ratio: float = 0.6,
     eps: float = 1e-8,
 ) -> float:
     from arch import arch_model
+
+    returns_mat = np.asarray(returns_mat)
+    vars_mat = np.asarray(vars_mat)
 
     n_series, t_len = returns_mat.shape
     max_start = t_len - window_size - 1
@@ -189,8 +206,8 @@ def arch_baseline_log_mse_per_series(
     mses = []
 
     for j in range(n_series):
-        r = returns_mat[j].detach().cpu().numpy()
-        true_s2 = vars_mat[j].detach().cpu().numpy()
+        r = returns_mat[j]
+        true_s2 = vars_mat[j]
 
         am = arch_model(
             r[:fit_len],
@@ -208,7 +225,7 @@ def arch_baseline_log_mse_per_series(
         beta = res.params["beta[1]"]
 
         sigma2_hat = np.zeros(t_len, dtype=np.float64)
-        sigma2_hat[:fit_len] = res.conditional_volatility**2
+        sigma2_hat[:fit_len] = res.conditional_volatility ** 2
 
         s2 = sigma2_hat[fit_len - 1]
         for t in range(fit_len, t_len):
@@ -230,33 +247,29 @@ def log_mse_on_r2(r2: np.ndarray, s2_hat: np.ndarray, eps: float = 1e-12) -> flo
     return float(np.mean((np.log(np.maximum(r2, eps)) - np.log(np.maximum(s2_hat, eps))) ** 2))
 
 
-@torch.no_grad()
 def nn_predict_sigma2_from_window(
-    model: torch.nn.Module,
+    model: tf.keras.Model,
     window_r: np.ndarray,
     mean_train: float,
     std_train: float,
-    device: torch.device,
     eps: float = 1e-12,
 ) -> float:
     """One-step variance prediction from a single return window (real units)."""
     w = (window_r - mean_train) / (std_train + 1e-8)
-    xb = torch.tensor(w, dtype=torch.float32, device=device).unsqueeze(0).unsqueeze(-1)
+    xb = tf.constant(w[np.newaxis, :, np.newaxis], dtype=tf.float32)  # [1, W, 1]
 
-    out = model(xb)
+    out = model(xb, training=False)
     pred = out[0] if isinstance(out, (tuple, list)) else out
-    pred = torch.clamp(pred, min=eps).view(-1)[0].item()
+    pred = float(tf.maximum(pred, eps).numpy().reshape(-1)[0])
 
     return pred * (std_train + 1e-8) ** 2
 
 
-@torch.no_grad()
 def rolling_forecast_nn(
-    model: torch.nn.Module,
+    model: tf.keras.Model,
     r: np.ndarray,
     window_size: int,
     train_ratio: float = 0.7,
-    device: torch.device | str = "cpu",
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     r = np.asarray(r)
     n = len(r)
@@ -274,7 +287,7 @@ def rolling_forecast_nn(
         if t - window_size < 0:
             continue
         window = r[t - window_size : t]
-        s2_hat = nn_predict_sigma2_from_window(model, window, mean_train, std_train, device)
+        s2_hat = nn_predict_sigma2_from_window(model, window, mean_train, std_train)
         preds.append(s2_hat)
         r2_real.append(r[t] ** 2)
         idxs.append(t)
@@ -312,7 +325,7 @@ def rolling_forecast_arch(
             last_fit_t = t
 
         f = last_res.forecast(horizon=1, reindex=False)
-        s2_hat = float(f.variance.values[-1, 0] / (100**2))
+        s2_hat = float(f.variance.values[-1, 0] / (100 ** 2))
 
         preds.append(s2_hat)
         r2_real.append(r[t] ** 2)
