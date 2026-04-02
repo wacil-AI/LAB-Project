@@ -15,7 +15,8 @@
       "Bash(find /c/Users/karim/Wacil_AI -type f -name *test*.py)",
       "Bash(find '/c/Users/karim/Wacil_AI/Msc AI/LAB Project/Test_real_data' -type f -name *.py)",
       "Bash(grep -l \"CorrelationEigenTransformLayer\" \"c:\\\\Users\\\\karim\\\\Wacil_AI\\\\Msc AI\\\\LAB Project\\\\Test_real_data\"/*.py)",
-      "Bash(grep -r \"rienet\\\\|RIEnet\" \"c:\\\\Users\\\\karim\\\\Wacil_AI\\\\Msc AI\\\\LAB Project\\\\Test_real_data\"/*.py)"
+      "Bash(grep -r \"rienet\\\\|RIEnet\" \"c:\\\\Users\\\\karim\\\\Wacil_AI\\\\Msc AI\\\\LAB Project\\\\Test_real_data\"/*.py)",
+      "Bash(cd:*)"
     ]
   }
 }
