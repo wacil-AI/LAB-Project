@@ -158,6 +158,17 @@ In some experiments, weight constraints are added, such as per-asset caps or pra
 
 The project first pretrains the volatility network on synthetic GARCH(1,1) series before adapting it to real equity data. The exploratory setup recovered from \texttt{Main.ipynb} uses 2000 simulated series, 2000 samples, a 90-day input window, and a 60/20/20 split between training, validation, and test subsets. This stage is not meant to replace real-data learning. Its role is to initialize the model on generic heteroskedastic dynamics so that fine-tuning on equities starts from a financially meaningful prior rather than from random weights.
 
+The synthetic diagnostics are useful because they check whether the network learns a sensible mapping between return windows and GARCH-style parameters. Figure \ref{fig:synth-diag} summarizes this behavior. The $\omega$ parameter is recovered with the clearest monotonic relationship, while $\alpha$ and $\beta$ are pushed toward a narrower central band. This is a reasonable outcome for pretraining: many combinations of $(\alpha,\beta)$ can generate similar short-horizon volatility paths, so coefficient-level identification is harder than one-step variance prediction. In other words, the synthetic phase should mainly be read as a stable initialization step that teaches the network the geometry of heteroskedastic dynamics before real-data adaptation.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{extracted_figures/synthetic_param_scatter.png}
+
+\includegraphics[width=\textwidth]{extracted_figures/synthetic_param_hist.png}
+\caption{Synthetic pretraining diagnostics on simulated GARCH(1,1) series. Top: per-series true versus predicted parameters. Bottom: distribution of true and predicted parameters after scaling the process by the training standard deviation.}
+\label{fig:synth-diag}
+\end{figure}
+
 \subsection{Real-data fine-tuning}
 
 Real-data training is handled in \texttt{test\_on\_real\_time\_series.ipynb}. The final fine-tuning configuration uses a 90-day window, about 20 epochs, a learning rate around $10^{-4}$, weight decay around $10^{-6}$, validation-based checkpoint selection, and zero-aware filtering. The preprocessing also imposes a cap on the fraction of zero returns and a small floor on the variance proxy in order to avoid degenerate log-loss behavior on illiquid or nearly constant series.
@@ -173,7 +184,14 @@ The training loss is an MSE on log-variance targets:
 \log\left(y_{m} + \varepsilon\right)
 \right]^2,
 \]
-where $y_m$ is a next-day realized variance proxy derived from squared returns and $\varepsilon$ is a small numerical floor. The notebooks report a strong improvement after the zero-aware fine-tuning stage, which is consistent with the idea that noisy or stale observations can distort volatility targets on daily equity data.
+where $y_m$ is a next-day realized variance proxy derived from squared returns and $\varepsilon$ is a small numerical floor. The training curves in Figure \ref{fig:real-train-curve} show a fast and stable reduction of both training and validation loss on the WIKI panel: in the first real-data run, validation log-MSE drops from about 97 to around 7 in twenty epochs, while the held-out test score is 7.1037. The later zero-aware fine-tuning stage is even stronger, reaching a best validation loss of 4.408 and a test log-MSE of 4.415. This confirms that filtering very small $r^2$ targets and windows with too many zero returns improves calibration on real equities.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.82\textwidth]{extracted_figures/test_on_real_time_series_cell07_0.png}
+\caption{Example real-data training curve for the hybrid NN-GARCH model on WIKI returns. The gap between train and validation remains controlled while both losses decrease sharply over the first fifteen epochs.}
+\label{fig:real-train-curve}
+\end{figure}
 
 \subsection{Hybrid CNN-GARCH architecture}
 
@@ -249,6 +267,38 @@ The project compares three portfolio pipelines:
 The main portfolio results are produced in the \texttt{End-to-end} notebooks. The user-specified primary result is the 50-stock unconstrained experiment from \path{portfolio_unconstrained_rienet.ipynb}. Supporting results come from the constrained 30-stock and 100-stock experiments in \path{portfolio_optimization_rienet.ipynb} and \path{portfolio_optimization.ipynb}. A separate Monte Carlo study in \path{Portfolio.ipynb} repeatedly samples 30-stock universes to test robustness.
 
 The evaluation logic is simple. For GMV portfolios, the first objective is lower realized volatility. When two methods have comparable volatility, the second criterion is the Sharpe ratio. This is consistent with the core purpose of minimum-variance allocation.
+
+\subsection{Real-data volatility forecasting diagnostics}
+
+Before looking at portfolio returns, it is useful to verify that the volatility module itself improves on standard baselines. Figure \ref{fig:real-forecast-panel} compares scratch training, the zero-aware finetuned model, ARCH/GARCH, EWMA, a naive $r_{t-1}^2$ predictor, and a constant-variance baseline on the same filtered real-data evaluation sample. Table \ref{tab:real-forecast-metrics} summarizes the corresponding metrics.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{extracted_figures/test_on_real_time_series_cell24_0.png}
+\caption{Predicted variance versus realized $r^2$ on the filtered real-data evaluation sample. The zero-aware finetuned model forms the tightest cloud among the neural methods and substantially improves over scratch training.}
+\label{fig:real-forecast-panel}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Robust real-data forecasting metrics on the common filtered evaluation subset ($n=800$).}
+\label{tab:real-forecast-metrics}
+\small
+\begin{tabular}{lcccc}
+\toprule
+Method & log-MSE & corr$_{\log}$ & corr$_{\mathrm{level}}$ & $p$-value vs ARCH \\
+\midrule
+finetune\_zeroaware & 4.8284 & 0.3100 & 0.3280 & $4.86 \times 10^{-24}$ \\
+arch\_garch11 & 7.0036 & 0.3215 & 0.2560 & -- \\
+ewma\_094 & 7.0061 & 0.3058 & 0.3005 & $9.71 \times 10^{-1}$ \\
+scratch & 12.9517 & 0.2586 & 0.2334 & $3.42 \times 10^{-15}$ \\
+const & 15.1234 & -- & -- & $9.31 \times 10^{-98}$ \\
+naive\_rtm1\_sq & 15.5118 & 0.1615 & 0.2217 & $6.02 \times 10^{-6}$ \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Two points are important. First, the zero-aware finetuned model achieves the lowest log-MSE by a large margin, which means it is the best calibrated forecast in the metric that matters most for this project. Second, ARCH has a slightly higher log-correlation than the finetuned model, but its overall prediction error is substantially larger. This is why the report prioritizes log-MSE over correlation alone: a model can preserve ranking without matching the correct scale of volatility. The comparison therefore justifies the use of the finetuned neural forecaster in the portfolio experiments.
 
 \subsection{Main result: 50-stock unconstrained GMV}
 
@@ -359,11 +409,9 @@ These numbers show a clear trade-off. The neural model is slower than the benchm
 
 \section{Ethical and Societal Impact}
 
-Although this project is primarily methodological, it still raises nontrivial ethical and practical issues. First, backtest success does not guarantee future reliability. Risk models trained on historical equity data can fail under regime changes, crises, or structural breaks. A model that looks safer than a benchmark in-sample or in one historical backtest can still fail when liquidity vanishes or correlations spike.
+This project is mainly methodological, but it still has a positive ethical and societal dimension because better risk estimation can support more disciplined portfolio construction. The hybrid design keeps an interpretable GARCH structure at the output stage, which makes the model easier to audit and explain than a fully opaque black-box forecaster. The project also encourages reproducibility: the optimization rule is fixed, the covariance-estimation pipeline is explicit, and the code can be inspected end to end.
 
-Second, unconstrained or weakly constrained variance-minimization portfolios may produce short positions and concentrated exposures that are unacceptable in real mandates. This matters especially when leverage is considered, because small covariance errors can translate into large capital allocations. The model should therefore be seen as a decision-support tool for research, not as a fully autonomous trading system ready for deployment.
-
-Third, the data pipeline may still contain survivorship, delisting, or stale-price effects despite the cleaning rules. Daily data also understate intraday liquidity stress and trading frictions. A socially responsible presentation of the project should therefore state clearly that transaction costs, market impact, and operational constraints are not yet fully modeled.
+From an applied perspective, the present framework is a strong basis for more realistic investment settings. Long-only constraints, turnover penalties, transaction-cost models, and exposure controls can be added on top of the same forecasting pipeline. In that sense, the project is best viewed as a transparent research contribution for portfolio-risk management, with clear room for extension toward practical and mandate-compatible implementations.
 
 \section{Project Organization}
 

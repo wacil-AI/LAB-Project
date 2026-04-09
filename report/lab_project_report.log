@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.4.5)  9 APR 2026 17:05
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.4.5)  9 APR 2026 17:38
 entering extended mode
  restricted \write18 enabled.
  file:line:error style messages enabled.
@@ -585,75 +585,114 @@ rid CNN-GARCH, and CNN-GARCH
 /Users/karim/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-rm.enc}{C:/Use
 rs/karim/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathit.enc}]
 [2] [3{C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-maths
-y.enc}] [4{C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-m
-athex.enc}] [5]
-<../End-to-end/gmv_unconstrained_results.png, id=182, 1148.6112pt x 711.1368pt>
+y.enc}]
+<extracted_figures/synthetic_param_scatter.png, id=166, 1092.2406pt x 297.2706p
+t>
+File: extracted_figures/synthetic_param_scatter.png Graphic file (type png)
+<use extracted_figures/synthetic_param_scatter.png>
+Package pdftex.def Info: extracted_figures/synthetic_param_scatter.png  used on
+ input line 165.
+(pdftex.def)             Requested size: 452.9679pt x 123.28334pt.
+<extracted_figures/synthetic_param_hist.png, id=168, 1092.2406pt x 297.2706pt>
+File: extracted_figures/synthetic_param_hist.png Graphic file (type png)
+<use extracted_figures/synthetic_param_hist.png>
+Package pdftex.def Info: extracted_figures/synthetic_param_hist.png  used on in
+put line 167.
+(pdftex.def)             Requested size: 452.9679pt x 123.28334pt.
+ [4 <./extracted_figures/synthetic_param_scatter.png> <./extracted_figures/synt
+hetic_param_hist.png>]
+<extracted_figures/test_on_real_time_series_cell07_0.png, id=177, 714.7503pt x 
+354.123pt>
+File: extracted_figures/test_on_real_time_series_cell07_0.png Graphic file (typ
+e png)
+<use extracted_figures/test_on_real_time_series_cell07_0.png>
+Package pdftex.def Info: extracted_figures/test_on_real_time_series_cell07_0.pn
+g  used on input line 191.
+(pdftex.def)             Requested size: 371.43698pt x 184.03154pt.
+ [5{C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/lm/lm-mathex.e
+nc} <./extracted_figures/test_on_real_time_series_cell07_0.png>] [6]
+<extracted_figures/test_on_real_time_series_cell24_0.png, id=203, 1164.2697pt x
+ 658.3797pt>
+File: extracted_figures/test_on_real_time_series_cell24_0.png Graphic file (typ
+e png)
+<use extracted_figures/test_on_real_time_series_cell24_0.png>
+Package pdftex.def Info: extracted_figures/test_on_real_time_series_cell24_0.pn
+g  used on input line 277.
+(pdftex.def)             Requested size: 452.9679pt x 256.14418pt.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <10> on input line 287.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <7> on input line 287.
+LaTeX Font Info:    External font `lmex10' loaded for size
+(Font)              <5> on input line 287.
+ [7 <./extracted_figures/test_on_real_time_series_cell24_0.png>]
+<../End-to-end/gmv_unconstrained_results.png, id=212, 1148.6112pt x 711.1368pt>
 
 File: ../End-to-end/gmv_unconstrained_results.png Graphic file (type png)
 <use ../End-to-end/gmv_unconstrained_results.png>
 Package pdftex.def Info: ../End-to-end/gmv_unconstrained_results.png  used on i
-nput line 276.
+nput line 326.
 (pdftex.def)             Requested size: 371.43698pt x 229.9665pt.
- [6 <../End-to-end/gmv_unconstrained_results.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 304--304
-[]\T1/lmr/m/n/10.95 Table 3: []Summary of the 100-stock con-strained com-par-i-
+ [8]
+Underfull \hbox (badness 10000) in paragraph at lines 354--354
+[]\T1/lmr/m/n/10.95 Table 4: []Summary of the 100-stock con-strained com-par-i-
 son from
  []
 
-<../End-to-end/gmv_results.png, id=192, 1148.6112pt x 711.1368pt>
+[9 <../End-to-end/gmv_unconstrained_results.png>]
+<../End-to-end/gmv_results.png, id=228, 1148.6112pt x 711.1368pt>
 File: ../End-to-end/gmv_results.png Graphic file (type png)
 <use ../End-to-end/gmv_results.png>
-Package pdftex.def Info: ../End-to-end/gmv_results.png  used on input line 324.
+Package pdftex.def Info: ../End-to-end/gmv_results.png  used on input line 374.
 
 (pdftex.def)             Requested size: 380.49136pt x 235.56564pt.
-[7]
-<../mc_wilcoxon_distributions.png, id=199, 1293.1512pt x 710.655pt>
+<../mc_wilcoxon_distributions.png, id=229, 1293.1512pt x 710.655pt>
 File: ../mc_wilcoxon_distributions.png Graphic file (type png)
 <use ../mc_wilcoxon_distributions.png>
 Package pdftex.def Info: ../mc_wilcoxon_distributions.png  used on input line 3
-49.
+99.
 (pdftex.def)             Requested size: 353.31439pt x 194.16743pt.
- [8 <../End-to-end/gmv_results.png>] [9 <../mc_wilcoxon_distributions.png>]
-Underfull \hbox (badness 10000) in paragraph at lines 389--389
+ [10 <../End-to-end/gmv_results.png>] [11 <../mc_wilcoxon_distributions.png>]
+Underfull \hbox (badness 10000) in paragraph at lines 437--437
 []|\T1/lmr/m/n/10.95 Bongiorno pa-pers,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 389--389
+Underfull \hbox (badness 10000) in paragraph at lines 437--437
 \T1/lmr/m/n/10.95 GARCH, co-vari-ance
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 389--389
+Underfull \hbox (badness 10000) in paragraph at lines 437--437
 \T1/lmr/m/n/10.95 clean-ing, hy-brid NN
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 389--389
+Underfull \hbox (badness 10000) in paragraph at lines 437--437
 \T1/lmr/m/n/10.95 gen-er-a-tion and first
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 389--389
+Underfull \hbox (badness 10000) in paragraph at lines 437--437
 \T1/lmr/m/n/10.95 strained/unconstrained
  []
 
-[10] [11] [12] (lab_project_report.aux)
+[12] [13] [14] (lab_project_report.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
  ***********
 Package rerunfilecheck Info: File `lab_project_report.out' has not changed.
-(rerunfilecheck)             Checksum: 768BF77557E35C8A235D67E7716C43C2;5073.
+(rerunfilecheck)             Checksum: 79BE43BBD95E589EEA76D0221EB152C8;5360.
  ) 
 Here is how much of TeX's memory you used:
- 11881 strings out of 467871
- 183289 string characters out of 5418377
- 609713 words of memory out of 5000000
- 40513 multiletter control sequences out of 15000+600000
- 678813 words of font info for 72 fonts, out of 8000000 for 9000
+ 11953 strings out of 467871
+ 185378 string characters out of 5418377
+ 610534 words of memory out of 5000000
+ 40568 multiletter control sequences out of 15000+600000
+ 702655 words of font info for 91 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 75i,10n,79p,1360b,564s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 75i,11n,79p,1360b,564s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx10.pf
 b><C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmbx12.pf
 b><C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmex10.pf
@@ -661,16 +700,18 @@ b><C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi10.pf
 b><C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmmi8.pfb
 ><C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr10.pfb>
 <C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr12.pfb><
-C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:
-/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:
-/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:
-/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/
-Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb><C:/
-Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/m
-sbm10.pfb>
-Output written on lab_project_report.pdf (13 pages, 1677749 bytes).
+C:/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr7.pfb><C:
+/Users/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmr8.pfb><C:/U
+sers/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmri10.pfb><C:/U
+sers/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy10.pfb><C:/U
+sers/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy7.pfb><C:/Us
+ers/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmsy8.pfb><C:/Use
+rs/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/lm/lmtt10.pfb><C:/Use
+rs/karim/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/symbols/msbm
+10.pfb>
+Output written on lab_project_report.pdf (15 pages, 2078049 bytes).
 PDF statistics:
- 313 PDF objects out of 1000 (max. 8388607)
- 67 named destinations out of 1000 (max. 500000)
- 232 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 353 PDF objects out of 1000 (max. 8388607)
+ 74 named destinations out of 1000 (max. 500000)
+ 260 words of extra memory for PDF output out of 10000 (max. 10000000)
 
