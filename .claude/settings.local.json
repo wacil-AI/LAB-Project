@@ -16,7 +16,17 @@
       "Bash(find '/c/Users/karim/Wacil_AI/Msc AI/LAB Project/Test_real_data' -type f -name *.py)",
       "Bash(grep -l \"CorrelationEigenTransformLayer\" \"c:\\\\Users\\\\karim\\\\Wacil_AI\\\\Msc AI\\\\LAB Project\\\\Test_real_data\"/*.py)",
       "Bash(grep -r \"rienet\\\\|RIEnet\" \"c:\\\\Users\\\\karim\\\\Wacil_AI\\\\Msc AI\\\\LAB Project\\\\Test_real_data\"/*.py)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(cp \"C:/Users/karim/Wacil_AI/Msc AI/LAB Project/NN_GARCH2/téléchargement \\(1\\).png\" \"C:/Users/karim/Wacil_AI/Msc AI/LAB Project/Test_real_data/End-to-end/report/images/training_curve_1.png\")",
+      "Bash(cp \"C:/Users/karim/Wacil_AI/Msc AI/LAB Project/NN_GARCH2/téléchargement \\(3\\).png\" \"C:/Users/karim/Wacil_AI/Msc AI/LAB Project/Test_real_data/End-to-end/report/images/training_curve_2.png\")",
+      "Bash(pdflatex -interaction=nonstopmode lab_project_report.tex)",
+      "Read(//c/Program Files/**)",
+      "Read(//c//**)",
+      "Bash(cmd.exe /c \"where pdflatex 2>NUL\")",
+      "Bash(cmd.exe /c \"dir /s /b \\\\\"C:\\\\Program Files\\\\MiKTeX\\\\\" 2>NUL | findstr pdflatex\")",
+      "Bash(cmd.exe:*)",
+      "Bash(powershell.exe:*)",
+      "Bash(\"/c/Users/karim/AppData/Local/Programs/MiKTeX/miktex/bin/x64/pdflatex.exe\" -interaction=nonstopmode lab_project_report.tex)"
     ]
   }
 }
