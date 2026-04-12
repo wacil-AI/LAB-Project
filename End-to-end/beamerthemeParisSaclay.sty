@@ -1,0 +1,82 @@
+\ProvidesPackage{beamerthemeParisSaclay}[2026/04/06 Local Paris-Saclay poster theme]
+
+\RequirePackage{tikz}
+\RequirePackage{graphicx}
+
+\mode<presentation>
+
+\definecolor{psprune}{RGB}{99,0,60}
+\definecolor{psprunelight}{RGB}{244,236,241}
+\definecolor{psink}{RGB}{32,32,32}
+\definecolor{psgray}{RGB}{96,96,96}
+\definecolor{psgreen}{RGB}{36,116,88}
+\definecolor{psorange}{RGB}{190,108,26}
+
+\setbeamercolor{normal text}{fg=psink,bg=white}
+\setbeamercolor{structure}{fg=psprune}
+
+\setbeamercolor{headline}{fg=white,bg=psprune}
+\setbeamercolor{title in headline}{fg=white,bg=psprune}
+\setbeamercolor{author in headline}{fg=white,bg=psprune}
+\setbeamercolor{institute in headline}{fg=white,bg=psprune}
+
+\setbeamercolor{block title}{fg=white,bg=psprune}
+\setbeamercolor{block body}{fg=psink,bg=psprunelight}
+
+\setbeamercolor{block title example}{fg=white,bg=psgreen}
+\setbeamercolor{block body example}{fg=psink,bg=green!7}
+
+\setbeamercolor{block title alerted}{fg=white,bg=psorange}
+\setbeamercolor{block body alerted}{fg=psink,bg=orange!10}
+
+\setbeamercolor{footline}{fg=white,bg=psprune}
+
+\setbeamerfont{title in headline}{series=\bfseries,size=\fontsize{50}{54}}
+\setbeamerfont{author in headline}{series=\bfseries,size=\fontsize{26}{28}}
+\setbeamerfont{institute in headline}{size=\fontsize{16}{18}}
+\setbeamerfont{block title}{series=\bfseries,size=\Large}
+\setbeamerfont{block body}{size=\normalsize}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}{\color{psprune}$\blacktriangleright$}
+\setbeamertemplate{itemize subitem}{\color{psprune}$\bullet$}
+\setbeamertemplate{blocks}[rounded][shadow=true]
+
+\setbeamertemplate{headline}{%
+  \leavevmode
+  \begin{beamercolorbox}[wd=\paperwidth,ht=8.8cm,dp=0cm]{headline}
+    \begin{tikzpicture}
+      \useasboundingbox (0,0) rectangle (\paperwidth,8.8cm);
+      \fill[white] (0,0) rectangle (\paperwidth,8.8cm);
+      \fill[psprune] (0,1.35cm) rectangle (\paperwidth,8.8cm);
+
+      \node[anchor=south west,inner sep=0pt] at (0.55cm,3.55cm)
+        {\includegraphics[width=0.145\paperwidth]{logo_paris_saclay_blanc_trimmed.png}};
+
+      \node[anchor=center,inner sep=0pt,text width=0.60\paperwidth,align=center]
+        at (0.50\paperwidth,5.55cm)
+        {\usebeamerfont{title in headline}\usebeamercolor[fg]{title in headline}\inserttitle};
+
+      \node[anchor=center,inner sep=0pt,text width=0.52\paperwidth,align=center]
+        at (0.50\paperwidth,4.25cm)
+        {\usebeamerfont{author in headline}\usebeamercolor[fg]{author in headline}\insertauthor};
+
+      \node[anchor=center,inner sep=0pt,text width=0.58\paperwidth,align=center]
+        at (0.50\paperwidth,2.75cm)
+        {\usebeamerfont{institute in headline}\usebeamercolor[fg]{institute in headline}\insertinstitute};
+
+      \node[anchor=south east,inner sep=0pt] at (\dimexpr\paperwidth-0.35cm\relax,2.45cm)
+        {\includegraphics[height=4.6cm]{logo_centrale_supelec.png}};
+    \end{tikzpicture}
+  \end{beamercolorbox}
+  \vspace{0.00cm}
+}
+
+\setbeamertemplate{footline}{%
+  \leavevmode
+  \begin{beamercolorbox}[wd=\paperwidth,ht=1.1cm,dp=0.35cm,leftskip=1.4cm,rightskip=1.4cm]{footline}
+    \hfill \bfseries Volatility first, Sharpe second: CNN-GARCH + RIENet for robust GMV portfolios \hfill
+  \end{beamercolorbox}
+}
+
+\mode<all>

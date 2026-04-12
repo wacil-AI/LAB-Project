@@ -1,0 +1,81 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{engle1982}
+\citation{bollerslev1986}
+\citation{ledoit2004}
+\citation{bongiorno2025e2e}
+\citation{markowitz1952}
+\citation{ledoit2004}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{bongiorno2025e2e}
+\citation{engle1982}
+\citation{bollerslev1986}
+\citation{michankow2023}
+\citation{wang2025}
+\citation{bongiorno2025icaif}
+\@writefile{toc}{\contentsline {section}{\numberline {2}State of the Art}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}From Markowitz to covariance regularization}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Why GARCH remains a strong baseline}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Neural and hybrid volatility forecasting}{2}{subsection.2.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.4}Positioning of the present work}{2}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Problem Formulation and Data}{3}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Data source and cleaning}{3}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Notation and portfolio objective}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Methodology}{4}{section.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Synthetic pretraining}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Synthetic pretraining diagnostics on simulated GARCH(1,1) series. Top: per-series true versus predicted parameters. Bottom: distribution of true and predicted parameters after scaling the process by the training standard deviation.}}{4}{figure.1}\protected@file@percent }
+\newlabel{fig:synth-diag}{{1}{4}{Synthetic pretraining diagnostics on simulated GARCH(1,1) series. Top: per-series true versus predicted parameters. Bottom: distribution of true and predicted parameters after scaling the process by the training standard deviation}{figure.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Real-data fine-tuning}{4}{subsection.4.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Example real-data training curve for the hybrid NN-GARCH model on WIKI returns. The gap between train and validation remains controlled while both losses decrease sharply over the first fifteen epochs.}}{5}{figure.2}\protected@file@percent }
+\newlabel{fig:real-train-curve}{{2}{5}{Example real-data training curve for the hybrid NN-GARCH model on WIKI returns. The gap between train and validation remains controlled while both losses decrease sharply over the first fifteen epochs}{figure.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Hybrid CNN-GARCH architecture}{5}{subsection.4.3}\protected@file@percent }
+\citation{ledoit2004}
+\citation{bongiorno2025e2e}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}RIENet-style correlation cleaning}{6}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Pseudo-code}{6}{subsection.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Numerical Results}{7}{section.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Experimental setup}{7}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Real-data volatility forecasting diagnostics}{7}{subsection.5.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Predicted variance versus realized $r^2$ on the filtered real-data evaluation sample. The zero-aware finetuned model forms the tightest cloud among the neural methods and substantially improves over scratch training.}}{7}{figure.3}\protected@file@percent }
+\newlabel{fig:real-forecast-panel}{{3}{7}{Predicted variance versus realized $r^2$ on the filtered real-data evaluation sample. The zero-aware finetuned model forms the tightest cloud among the neural methods and substantially improves over scratch training}{figure.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Robust real-data forecasting metrics on the common filtered evaluation subset ($n=800$).}}{8}{table.1}\protected@file@percent }
+\newlabel{tab:real-forecast-metrics}{{1}{8}{Robust real-data forecasting metrics on the common filtered evaluation subset ($n=800$)}{table.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Main result: 50-stock unconstrained GMV}{8}{subsection.5.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Main result from \texttt  {portfolio\_unconstrained\_rienet.ipynb}.}}{8}{table.2}\protected@file@percent }
+\newlabel{tab:main-unconstrained}{{2}{8}{Main result from \texttt {portfolio\_unconstrained\_rienet.ipynb}}{table.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Cumulative performance comparison for the 50-stock unconstrained GMV experiment.}}{9}{figure.4}\protected@file@percent }
+\newlabel{fig:gmv-unconstrained}{{4}{9}{Cumulative performance comparison for the 50-stock unconstrained GMV experiment}{figure.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Supporting results: constrained GMV experiments}{9}{subsection.5.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Constrained 30-stock result from \texttt  {portfolio\_optimization\_rienet.ipynb}.}}{9}{table.3}\protected@file@percent }
+\newlabel{tab:constrained-30}{{3}{9}{Constrained 30-stock result from \texttt {portfolio\_optimization\_rienet.ipynb}}{table.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Summary of the 100-stock constrained comparison from \texttt  {portfolio\_optimization.ipynb}.}}{9}{table.4}\protected@file@percent }
+\newlabel{tab:constrained-100}{{4}{9}{Summary of the 100-stock constrained comparison from \texttt {portfolio\_optimization.ipynb}}{table.4}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Example cumulative comparison from the constrained GMV experiments.}}{10}{figure.5}\protected@file@percent }
+\newlabel{fig:gmv-constrained}{{5}{10}{Example cumulative comparison from the constrained GMV experiments}{figure.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Monte Carlo robustness}{10}{subsection.5.5}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Monte Carlo distributions used for the paired Wilcoxon robustness study.}}{11}{figure.6}\protected@file@percent }
+\newlabel{fig:wilcoxon}{{6}{11}{Monte Carlo distributions used for the paired Wilcoxon robustness study}{figure.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Computational resources and cost}{11}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Ethical and Societal Impact}{11}{section.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Project Organization}{12}{section.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.1}Task distribution draft}{12}{subsection.7.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Draft template for task distribution. Replace the placeholders with the exact final split.}}{12}{table.5}\protected@file@percent }
+\newlabel{tab:task-distribution}{{5}{12}{Draft template for task distribution. Replace the placeholders with the exact final split}{table.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.2}Time spent draft}{12}{subsection.7.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Editable hours table.}}{12}{table.6}\protected@file@percent }
+\newlabel{tab:hours}{{6}{12}{Editable hours table}{table.6}{}}
+\bibcite{markowitz1952}{1}
+\bibcite{engle1982}{2}
+\bibcite{bollerslev1986}{3}
+\bibcite{ledoit2004}{4}
+\bibcite{bongiorno2025e2e}{5}
+\bibcite{bongiorno2025icaif}{6}
+\bibcite{michankow2023}{7}
+\@writefile{toc}{\contentsline {subsection}{\numberline {7.3}Timeline draft}{13}{subsection.7.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Simple Gantt-style timeline for the report.}}{13}{table.7}\protected@file@percent }
+\newlabel{tab:timeline}{{7}{13}{Simple Gantt-style timeline for the report}{table.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {8}Conclusion and Perspectives}{13}{section.8}\protected@file@percent }
+\bibcite{wang2025}{8}
+\gdef \@abspage@last{15}
